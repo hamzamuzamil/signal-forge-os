@@ -9,7 +9,105 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      signals: {
+        Row: {
+          ai_notes: string | null
+          category: string
+          content: string
+          created_at: string
+          email_label: string | null
+          id: string
+          score: number
+          signal_type: string
+          suggested_action: string | null
+          user_confirmed: boolean | null
+          user_id: string
+        }
+        Insert: {
+          ai_notes?: string | null
+          category: string
+          content: string
+          created_at?: string
+          email_label?: string | null
+          id?: string
+          score: number
+          signal_type: string
+          suggested_action?: string | null
+          user_confirmed?: boolean | null
+          user_id: string
+        }
+        Update: {
+          ai_notes?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          email_label?: string | null
+          id?: string
+          score?: number
+          signal_type?: string
+          suggested_action?: string | null
+          user_confirmed?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          focus_areas: string[] | null
+          id: string
+          notification_settings: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          focus_areas?: string[] | null
+          id?: string
+          notification_settings?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          focus_areas?: string[] | null
+          id?: string
+          notification_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_summaries: {
+        Row: {
+          created_at: string
+          focus_areas: string[] | null
+          id: string
+          missed_signals: string[] | null
+          top_signals: Json | null
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          focus_areas?: string[] | null
+          id?: string
+          missed_signals?: string[] | null
+          top_signals?: Json | null
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string
+          focus_areas?: string[] | null
+          id?: string
+          missed_signals?: string[] | null
+          top_signals?: Json | null
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
