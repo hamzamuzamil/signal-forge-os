@@ -1,73 +1,111 @@
-# Welcome to your Lovable project
+# SignalForge OS
 
-## Project info
+An intelligent signal processing platform that helps you filter through information noise and focus on what truly matters in your digital workspace.
 
-**URL**: https://lovable.dev/projects/1fac671b-6308-4b6f-a55b-2b0db4b79c7b
+## Features
 
-## How can I edit this code?
+### 🎯 Feed Dump
+- Instant content analysis and filtering
+- Smart signal-to-noise ratio detection
+- Automated priority scoring
 
-There are several ways of editing your application.
+### 📨 Inbox Signalizer
+- Email content analysis
+- Smart categorization
+- Action recommendations
 
-**Use Lovable**
+### 🧭 Clarity Compass
+- Decision support system
+- Pattern recognition
+- Strategic insights
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1fac671b-6308-4b6f-a55b-2b0db4b79c7b) and start prompting.
+### 🔔 Focus Alerts
+- Real-time signal monitoring
+- Priority notifications
+- Custom alert thresholds
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🔍 Blind Spot Scanner
+- Gap analysis in information flow
+- Missed opportunity detection
+- Strategic recommendations
 
-**Use your preferred IDE**
+## Tech Stack
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend Framework**: React with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase
+- **Authentication**: Supabase Auth
+- **State Management**: React Query
+- **Routing**: React Router
+- **UI Components**: Radix UI
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Getting Started
 
-Follow these steps:
+### Prerequisites
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- Node.js (v18+ recommended)
+- npm or yarn
+- Supabase account
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Installation
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. Clone the repository
+```bash
+git clone <repository-url>
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Navigate to project directory
+cd signal-forge-os
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 ```
+## Project Structure
+/src
+  /components
+    /dashboard    - Dashboard components
+    /ui          - Reusable UI components
+  /hooks         - Custom React hooks
+  /integrations  - Third-party service integrations
+  /lib          - Utility functions
+  /pages        - Main page components
+  /providers    - React context providers
+  /types        - TypeScript types
+  /utils        - Utility functions
+  /App.tsx      - Main application component
+  /main.tsx     - Entry point
+  /vite.config.ts - Vite configuration
+  /tailwind.config.ts - Tailwind CSS configuration
+  /package.json - Project configuration
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+  2. Install dependencies
 
-**Use GitHub Codespaces**
+  npm install
+  ```
+  npm install
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Create a .env file in the root directory and add your Supabase credentials:
+.env
 
-## What technologies are used for this project?
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 
-This project is built with:
+Run the development server:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+npm run dev
+Open http://localhost:8080 in your browser to view the app.
 
-## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/1fac671b-6308-4b6f-a55b-2b0db4b79c7b) and click on Share -> Publish.
+## Contributing
+1. Fork the repository
+2. Create your feature branch ( git checkout -b feature/AmazingFeature )
+3. Commit your changes ( git commit -m 'Add some AmazingFeature' )
+4. Push to the branch ( git push origin feature/AmazingFeature )
+5. Open a Pull Request
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## License
+This project is proprietary software. All rights reserved.
