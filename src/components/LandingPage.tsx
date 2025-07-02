@@ -15,7 +15,9 @@ import {
   Inbox,
   Compass,
   AlertTriangle,
-  Search
+  Search,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -24,10 +26,16 @@ interface LandingPageProps {
 
 const LandingPage = ({ onGetStarted }: LandingPageProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    element?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const features = [
     {
@@ -92,8 +100,99 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white overflow-hidden">
+      {/* Navigation Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/80 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+              SignalOS
+            </div>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <button 
+                onClick={() => scrollToSection('features')}
+                className="text-gray-400 hover:text-white transition-colors duration-300"
+              >
+                Features
+              </button>
+              <button 
+                onClick={() => scrollToSection('benefits')}
+                className="text-gray-400 hover:text-white transition-colors duration-300"
+              >
+                Benefits
+              </button>
+              <button 
+                onClick={() => scrollToSection('how-it-works')}
+                className="text-gray-400 hover:text-white transition-colors duration-300"
+              >
+                How It Works
+              </button>
+              <Button 
+                onClick={onGetStarted}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-300 transform hover:scale-105"
+              >
+                Get Started
+              </Button>
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-400 hover:text-white transition-colors duration-300"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
+
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-white/10">
+              <div className="flex flex-col space-y-4 pt-4">
+                <button 
+                  onClick={() => {
+                    scrollToSection('features');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-left"
+                >
+                  Features
+                </button>
+                <button 
+                  onClick={() => {
+                    scrollToSection('benefits');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-left"
+                >
+                  Benefits
+                </button>
+                <button 
+                  onClick={() => {
+                    scrollToSection('how-it-works');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors duration-300 text-left"
+                >
+                  How It Works
+                </button>
+                <Button 
+                  onClick={() => {
+                    onGetStarted();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-300 w-fit"
+                >
+                  Get Started
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4">
+      <section className="relative min-h-screen flex items-center justify-center px-4 pt-20">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-transparent to-blue-500/10 animate-pulse"></div>
         
         <div className={`max-w-6xl mx-auto text-center z-10 transition-all duration-1000 ${
@@ -150,7 +249,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4">
+      <section id="features" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -176,7 +275,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-gray-900/50 to-black/50">
+      <section id="benefits" className="py-20 px-4 bg-gradient-to-r from-gray-900/50 to-black/50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -202,7 +301,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 px-4">
+      <section id="how-it-works" className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
