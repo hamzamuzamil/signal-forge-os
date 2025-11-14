@@ -64,11 +64,13 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [bubbleMenuOpen, setBubbleMenuOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [expandedCardIndex, setExpandedCardIndex] = useState<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const scrollPositionRef = useRef<number>(0);
   const resumeScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollY = useRef<number>(0);
 
   useEffect(() => {
     setIsVisible(true);
@@ -82,6 +84,32 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
         resumeScrollTimeoutRef.current = null;
       }
     };
+  }, []);
+
+  // Handle scroll to show/hide menu
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show menu when at top of page
+      if (currentScrollY < 50) {
+        setIsMenuVisible(true);
+      } else {
+        // Hide when scrolling down, show when scrolling up
+        if (currentScrollY > lastScrollY.current) {
+          // Scrolling down
+          setIsMenuVisible(false);
+        } else {
+          // Scrolling up
+          setIsMenuVisible(true);
+        }
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Infinite auto-scroll with pause on hover
@@ -249,23 +277,27 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)] pointer-events-none"></div>
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.08),transparent_50%)] pointer-events-none"></div>
       {/* Navigation Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center pt-6">
-        <div className="w-full max-w-5xl mx-auto px-6">
-          {/* Glass Navigation Container */}
-          <div className="backdrop-blur-xl bg-slate-800/60 border border-white/10 rounded-2xl shadow-2xl px-6 md:px-8 py-3 md:py-4">
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-center transition-transform duration-300 ${
+          isMenuVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="w-full max-w-5xl mx-auto px-4 pt-3">
+          {/* Glass Navigation Container - More Compact */}
+          <div className="backdrop-blur-xl bg-slate-800/60 border border-white/10 rounded-xl shadow-2xl px-4 md:px-6 py-2 md:py-2.5">
             <div className="flex items-center justify-between">
               {/* Logo */}
-              <div className="text-xl md:text-2xl font-bold text-white flex-shrink-0">
+              <div className="text-lg md:text-xl font-bold text-white flex-shrink-0">
                 SignalOS
               </div>
               
               {/* Centered Navigation */}
-              <nav className="hidden md:flex items-center space-x-8 flex-1 justify-center">
+              <nav className="hidden md:flex items-center space-x-6 flex-1 justify-center">
                 {menuItems.map((item) => (
                   <button 
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
-                    className="text-base font-medium text-gray-300 hover:text-white transition-colors duration-300"
+                    className="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
                   >
                     {item.label}
                   </button>
@@ -275,7 +307,7 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               {/* Get Started Button - Hidden on mobile, shown on desktop */}
               <Button 
                 onClick={onGetStarted}
-                className="hidden md:flex bg-white hover:bg-gray-100 text-gray-900 font-semibold px-6 py-2.5 rounded-lg transition-all duration-300 text-base flex-shrink-0"
+                className="hidden md:flex bg-white hover:bg-gray-100 text-gray-900 font-semibold px-4 py-1.5 rounded-lg transition-all duration-300 text-sm flex-shrink-0"
               >
                 Get Started
               </Button>
@@ -283,9 +315,9 @@ const LandingPage = ({ onGetStarted }: LandingPageProps) => {
               {/* Mobile Menu Button - Shows on mobile */}
               <button
                 onClick={() => setBubbleMenuOpen(!bubbleMenuOpen)}
-                className="md:hidden w-10 h-10 flex items-center justify-center text-white hover:text-cyan-400 transition-colors"
+                className="md:hidden w-8 h-8 flex items-center justify-center text-white hover:text-cyan-400 transition-colors"
               >
-                {bubbleMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {bubbleMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
             </div>
           </div>
