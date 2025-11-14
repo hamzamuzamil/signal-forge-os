@@ -5,16 +5,28 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Target, Lightbulb, AlertTriangle, Plus, X } from 'lucide-react';
 
+interface MissingArea {
+  title: string;
+  description: string;
+  priority: string;
+  suggestedActions: string[];
+}
+
+interface AnalysisResult {
+  goals: string[];
+  missingAreas: MissingArea[];
+  recommendations: string[];
+}
+
 const BlindSpotScanner = () => {
   const [goals, setGoals] = useState<string[]>(['']);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
 
   const addGoal = () => {
-    if (goals.length < 3) {
-      setGoals([...goals, '']);
-    }
+    // Allow unlimited goals
+    setGoals([...goals, '']);
   };
 
   const updateGoal = (index: number, value: string) => {
@@ -151,13 +163,12 @@ const BlindSpotScanner = () => {
           <div className="flex justify-between items-center pt-4">
             <Button
               onClick={addGoal}
-              disabled={goals.length >= 3}
               variant="outline"
               size="sm"
               className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Goal {goals.length < 3 && `(${3 - goals.length} remaining)`}
+              Add Goal
             </Button>
 
             <Button
@@ -193,7 +204,7 @@ const BlindSpotScanner = () => {
 
           {/* Missing Information Areas */}
           <div className="grid gap-6">
-            {analysis.missingAreas.map((area: any, index: number) => (
+            {analysis.missingAreas.map((area, index) => (
               <div key={index} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center space-x-3">

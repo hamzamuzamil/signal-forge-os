@@ -1,11 +1,19 @@
 
-import { Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { LogOut, Brain, Inbox, Compass, Bell, Search, Home } from 'lucide-react';
+import { LogOut, Brain, Inbox, Compass, Bell, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 type TabType = 'feed' | 'inbox' | 'clarity' | 'focus' | 'blindspot';
+
+interface Session {
+  user: {
+    id: number;
+    email: string;
+    fullName: string;
+  };
+  token: string;
+}
 
 interface HeaderProps {
   session: Session;
@@ -17,13 +25,23 @@ const Header = ({ session, activeTab, setActiveTab }: HeaderProps) => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await api.logout();
+      navigate('/');
+      window.location.reload();
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Still navigate even if sign out fails
+      navigate('/');
+      window.location.reload();
+    }
   };
 
   const handleLogoClick = () => {
-    navigate('/');
+    // Reset to Feed Dump tab when clicking Home/Logo
+    setActiveTab('feed');
   };
+
 
   const tabs = [
     { id: 'feed' as TabType, icon: Brain, label: 'Feed Dump' },
@@ -46,14 +64,6 @@ const Header = ({ session, activeTab, setActiveTab }: HeaderProps) => {
             </button>
             
             <nav className="hidden md:flex items-center space-x-1">
-              <button
-                onClick={handleLogoClick}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 text-gray-400 hover:text-white hover:bg-white/5"
-              >
-                <Home className="w-4 h-4" />
-                <span className="text-sm font-medium">Home</span>
-              </button>
-              
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -76,7 +86,7 @@ const Header = ({ session, activeTab, setActiveTab }: HeaderProps) => {
 
           <div className="flex items-center space-x-4">
             <span className="text-gray-400 text-sm hidden sm:block">
-              {session.user.email}
+              {session.user.fullName || session.user.email}
             </span>
             <Button
               onClick={handleSignOut}

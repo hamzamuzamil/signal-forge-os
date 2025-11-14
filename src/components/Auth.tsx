@@ -1,39 +1,97 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { api, type AuthResponse } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
-const Auth = () => {
+interface AuthProps {
+  onAuthSuccess?: (response: AuthResponse) => void;
+}
+
+const Auth = ({ onAuthSuccess }: AuthProps) => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const { toast } = useToast();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSignUp) {
+      if (!email || !password || !fullName) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter your full name, email, and password.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (!email || !password) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter both email and password.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
-      const { error } = isSignUp 
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) throw error;
-
       if (isSignUp) {
+        const response = await api.signup({ email, password, fullName });
         toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link.",
+          title: "Account created",
+          description: `Welcome to SignalForge OS, ${response.user.fullName}!`,
         });
+        // Update session state through callback instead of reloading
+        if (onAuthSuccess) {
+          onAuthSuccess(response);
+        } else {
+          // Fallback to reload if no callback provided
+          window.location.reload();
+        }
+      } else {
+        const response = await api.login({ email, password });
+        toast({
+          title: "Welcome back!",
+          description: `Hello, ${response.user.fullName}!`,
+        });
+        // Update session state through callback instead of reloading
+        if (onAuthSuccess) {
+          onAuthSuccess(response);
+        } else {
+          // Fallback to reload if no callback provided
+          window.location.reload();
+        }
       }
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Auth error:', error);
+      
+      let errorMessage = "An error occurred during authentication. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('already exists') || error.message.includes('User with this email')) {
+          errorMessage = 'This email is already registered. Please sign in instead.';
+        } else if (error.message.includes('Invalid email or password')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+          errorMessage = 'Unable to connect to the server. Please make sure the backend is running on port 3001.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Authentication Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
+        duration: 6000,
       });
     } finally {
       setLoading(false);
@@ -53,6 +111,16 @@ const Auth = () => {
 
           <form onSubmit={handleAuth} className="space-y-6">
             <div className="space-y-4">
+              {isSignUp && (
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required={isSignUp}
+                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-400 focus:border-cyan-400 transition-all duration-300"
+                />
+              )}
               <Input
                 type="email"
                 placeholder="Email"

@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Brain, Sparkles } from 'lucide-react';
+import { api } from '@/lib/api';
+import { Brain } from 'lucide-react';
 import SignalCard from './SignalCard';
 
 interface FilteredSignal {
@@ -17,10 +17,81 @@ interface FilteredSignal {
   category: string;
 }
 
+interface ProcessedSignal extends FilteredSignal {
+  emailLabel?: string;
+  fullContent: string; // Store full content before truncation
+}
+
+// Process content and extract signals
+const processContent = (content: string): ProcessedSignal[] => {
+  const lines = content.split('\n').filter(line => line.trim().length > 0);
+  const signals: ProcessedSignal[] = [];
+  
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) return;
+    
+    // Check for email indicators on ORIGINAL content BEFORE truncation
+    const contentLower = trimmedLine.toLowerCase();
+    const isEmail = contentLower.includes('📧 email from') || 
+                   contentLower.includes('email from') ||
+                   contentLower.startsWith('subject:') ||
+                   (contentLower.includes('subject:') && contentLower.includes('@'));
+    
+    // Determine email label based on full content (before truncation)
+    let emailLabel: string | undefined;
+    if (isEmail) {
+      // Auto-label based on full content
+      if (contentLower.includes('investor') || contentLower.includes('funding') || contentLower.includes('series')) {
+        emailLabel = 'opportunity';
+      } else if (contentLower.includes('urgent') || contentLower.includes('deadline') || contentLower.includes('decision')) {
+        emailLabel = 'decision_needed';
+      } else if (contentLower.includes('newsletter') || contentLower.includes('digest') || contentLower.includes('webinar')) {
+        emailLabel = 'low_priority';
+      } else {
+        emailLabel = 'opportunity'; // Default
+      }
+    }
+    
+    // Analyze content to determine if it's a signal
+    const isSignal = contentLower.includes('funding') || 
+                     contentLower.includes('investor') ||
+                     contentLower.includes('opportunity') ||
+                     contentLower.includes('urgent') ||
+                     contentLower.includes('important') ||
+                     contentLower.includes('meeting') ||
+                     contentLower.includes('deadline') ||
+                     contentLower.includes('contract');
+    
+    // Calculate score based on keywords and content length
+    let score = 50; // Base score
+    if (isSignal) score += 30;
+    if (trimmedLine.length > 100) score += 10;
+    if (contentLower.includes('urgent') || contentLower.includes('asap')) score += 15;
+    score = Math.min(100, Math.max(20, score));
+    
+    signals.push({
+      id: `signal-${Date.now()}-${index}`,
+      content: trimmedLine.substring(0, 200), // Truncate for display
+      fullContent: trimmedLine, // Store full content for database
+      signalType: isSignal ? 'signal' : 'noise',
+      score: score,
+      summary: isSignal 
+        ? 'High-value content requiring attention' 
+        : 'Low-priority content, can be reviewed later',
+      suggestedAction: isSignal ? 'read' : 'ignore',
+      category: isSignal ? 'Important' : 'General',
+      emailLabel: emailLabel, // Store email label determined from full content
+    });
+  });
+  
+  return signals;
+};
+
 const FeedDump = () => {
   const [feedContent, setFeedContent] = useState('');
   const [loading, setLoading] = useState(false);
-  const [filteredSignals, setFilteredSignals] = useState<FilteredSignal[]>([]);
+  const [filteredSignals, setFilteredSignals] = useState<ProcessedSignal[]>([]);
   const { toast } = useToast();
 
   const handleFilterFeed = async () => {
@@ -35,35 +106,41 @@ const FeedDump = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('filter-signals', {
-        body: { content: feedContent }
-      });
-
-      if (error) throw error;
-
-      setFilteredSignals(data.signals);
+      // Process the content to extract signals
+      const signals = processContent(feedContent);
+      setFilteredSignals(signals);
       
-      // Save signals to database
-      for (const signal of data.signals) {
-        await supabase.from('signals').insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          content: signal.content,
-          category: signal.category,
-          score: signal.score,
-          ai_notes: signal.summary,
-          signal_type: signal.signalType,
-          suggested_action: signal.suggestedAction,
-        });
+      // Save signals to database (optional, don't block on errors)
+      try {
+        if (signals.length > 0) {
+          for (const signal of signals) {
+            // Use emailLabel that was determined from full content before truncation
+            // Save fullContent to database, not the truncated display version
+            await api.createSignal({
+              content: signal.fullContent, // Save full content, not truncated
+              category: signal.category,
+              score: signal.score,
+              ai_notes: signal.summary,
+              signal_type: signal.signalType,
+              suggested_action: signal.suggestedAction,
+              email_label: signal.emailLabel, // Use pre-determined email label from full content
+            });
+          }
+        }
+      } catch (dbError) {
+        console.warn('Failed to save signals to database:', dbError);
+        // Don't show error to user as the main functionality still works
       }
 
       toast({
         title: "Feed filtered successfully",
-        description: `Found ${data.signals.filter((s: any) => s.signalType === 'signal').length} high-value signals.`,
+        description: `Found ${signals.filter((s) => s.signalType === 'signal').length} high-value signals.`,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while filtering the feed.";
       toast({
         title: "Error filtering feed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -77,7 +154,6 @@ const FeedDump = () => {
         <div className="flex items-center justify-center space-x-3 mb-4">
           <Brain className="w-8 h-8 text-cyan-400" />
           <h2 className="text-3xl font-bold text-white">Feed Dump</h2>
-          <Sparkles className="w-6 h-6 text-yellow-400" />
         </div>
         <p className="text-gray-400 max-w-2xl mx-auto">
           Paste your daily content intake - emails, tweets, articles, notifications. 

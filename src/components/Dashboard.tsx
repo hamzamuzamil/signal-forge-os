@@ -1,12 +1,22 @@
 
 import { useState } from 'react';
-import { Session } from '@supabase/supabase-js';
 import Header from './dashboard/Header';
 import FeedDump from './dashboard/FeedDump';
 import InboxSignalizer from './dashboard/InboxSignalizer';
 import ClarityCompass from './dashboard/ClarityCompass';
 import FocusAlerts from './dashboard/FocusAlerts';
 import BlindSpotScanner from './dashboard/BlindSpotScanner';
+
+interface User {
+  id: number;
+  email: string;
+  fullName: string;
+}
+
+interface Session {
+  user: User;
+  token: string;
+}
 
 interface DashboardProps {
   session: Session;

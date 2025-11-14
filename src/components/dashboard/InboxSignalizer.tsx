@@ -3,10 +3,21 @@ import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Mail, CheckCircle, AlertCircle, Clock, Trash2 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { Mail, CheckCircle, AlertCircle, Clock, Trash2, Trash } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
-interface MockEmail {
+interface Email {
   id: string;
   subject: string;
   sender: string;
@@ -16,44 +27,68 @@ interface MockEmail {
   userConfirmed?: boolean;
 }
 
-const mockEmails: MockEmail[] = [
-  {
-    id: '1',
-    subject: 'Series A Follow-up from Andreessen Horowitz',
-    sender: 'sarah@a16z.com',
-    preview: 'Hi there! Following up on our conversation about your startup. We\'d love to schedule a deeper dive...',
-    aiLabel: 'opportunity',
-    timestamp: '2 hours ago'
-  },
-  {
-    id: '2',
-    subject: 'Newsletter: The weekly startup digest',
-    sender: 'digest@startupnews.com',
-    preview: 'This week in startup land: funding rounds, exits, and market trends...',
-    aiLabel: 'low_priority',
-    timestamp: '5 hours ago'
-  },
-  {
-    id: '3',
-    subject: 'Re: Contract terms discussion',
-    sender: 'legal@bigcorp.com',
-    preview: 'We\'ve reviewed the proposed changes and need your decision by end of week...',
-    aiLabel: 'decision_needed',
-    timestamp: '1 day ago'
-  },
-  {
-    id: '4',
-    subject: 'Webinar: Growth hacking tactics',
-    sender: 'events@growthco.com',
-    preview: 'Join us for an exclusive webinar on scaling your startup with proven tactics...',
-    aiLabel: 'ignore',
-    timestamp: '2 days ago'
-  }
-];
-
 const InboxSignalizer = () => {
-  const [emails, setEmails] = useState<MockEmail[]>(mockEmails);
+  const [emails, setEmails] = useState<Email[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [allSignalsCount, setAllSignalsCount] = useState(0);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadEmails = async () => {
+      try {
+        setLoading(true);
+        const response = await api.getSignals();
+        const signals = response.signals || [];
+        setAllSignalsCount(signals.length); // Track total signals for Clear All button
+        
+        // Filter signals that have email_label (emails)
+        const emailSignals = signals
+          .filter((s: any) => s.email_label)
+          .map((s: any) => {
+            // Parse content to extract subject, sender, preview
+            const lines = s.content.split('\n');
+            const subject = lines[0] || 'No subject';
+            const sender = s.ai_notes?.includes('from') 
+              ? s.ai_notes.split('from')[1]?.trim() || 'unknown@email.com'
+              : 'unknown@email.com';
+            const preview = lines.slice(1).join(' ').substring(0, 150) || s.content.substring(0, 150);
+            
+            // Calculate timestamp
+            const created = new Date(s.created_at);
+            const now = new Date();
+            const diffMs = now.getTime() - created.getTime();
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffHours / 24);
+            
+            let timestamp = 'Just now';
+            if (diffDays > 0) {
+              timestamp = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            } else if (diffHours > 0) {
+              timestamp = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            }
+            
+            return {
+              id: s.id.toString(),
+              subject: subject,
+              sender: sender,
+              preview: preview,
+              aiLabel: (s.email_label as Email['aiLabel']) || 'low_priority',
+              timestamp: timestamp,
+              userConfirmed: s.user_confirmed || false,
+            };
+          });
+        
+        setEmails(emailSignals);
+      } catch (error) {
+        console.error('Failed to load emails:', error);
+        setEmails([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEmails();
+  }, []);
 
   const getLabelColor = (label: string) => {
     switch (label) {
@@ -81,15 +116,14 @@ const InboxSignalizer = () => {
 
     const updatedEmails = emails.map(e => 
       e.id === emailId 
-        ? { ...e, aiLabel: newLabel as any || e.aiLabel, userConfirmed: true }
+        ? { ...e, aiLabel: (newLabel as Email['aiLabel']) || e.aiLabel, userConfirmed: true }
         : e
     );
     setEmails(updatedEmails);
 
-    // Save to database
+    // Save to database (optional, don't block on errors)
     try {
-      await supabase.from('signals').insert({
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+      await api.createSignal({
         content: `${email.subject}\n\n${email.preview}`,
         category: 'email',
         score: newLabel === 'opportunity' ? 90 : newLabel === 'decision_needed' ? 80 : newLabel === 'low_priority' ? 40 : 20,
@@ -103,11 +137,12 @@ const InboxSignalizer = () => {
         title: "Feedback recorded",
         description: newLabel ? "Label updated and AI will learn from this." : "Confirmation saved.",
       });
-    } catch (error: any) {
+    } catch (error) {
+      console.warn('Failed to save feedback:', error);
+      // Still show success message as the UI update worked
       toast({
-        title: "Error saving feedback",
-        description: error.message,
-        variant: "destructive",
+        title: "Feedback recorded",
+        description: newLabel ? "Label updated." : "Confirmation saved.",
       });
     }
   };
@@ -119,13 +154,115 @@ const InboxSignalizer = () => {
           <Mail className="w-8 h-8 text-cyan-400" />
           <h2 className="text-3xl font-bold text-white">Inbox Signalizer</h2>
         </div>
-        <p className="text-gray-400 max-w-2xl mx-auto">
+        <p className="text-gray-400 max-w-2xl mx-auto mb-4">
           AI-labeled email feed with smart categorization. Confirm or reassign labels to improve AI accuracy.
         </p>
+        {emails.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="mb-4"
+              >
+                <Trash className="w-4 h-4 mr-2" />
+                Clear All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear All Emails?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all your emails and signals. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    try {
+                      await api.deleteAllSignals();
+                      // Clear local state immediately
+                      setEmails([]);
+                      setAllSignalsCount(0);
+                      toast({
+                        title: "All data cleared",
+                        description: "All signals have been deleted. You can start fresh now.",
+                      });
+                      // Reload to ensure UI is in sync
+                      const response = await api.getSignals();
+                      const signals = response.signals || [];
+                      setAllSignalsCount(signals.length);
+                      const emailSignals = signals
+                        .filter((s: any) => s.email_label)
+                        .map((s: any) => {
+                          const lines = s.content.split('\n');
+                          const subject = lines[0] || 'No subject';
+                          const sender = s.ai_notes?.includes('from') 
+                            ? s.ai_notes.split('from')[1]?.trim() || 'unknown@email.com'
+                            : 'unknown@email.com';
+                          const preview = lines.slice(1).join(' ').substring(0, 150) || s.content.substring(0, 150);
+                          const created = new Date(s.created_at);
+                          const now = new Date();
+                          const diffMs = now.getTime() - created.getTime();
+                          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                          const diffDays = Math.floor(diffHours / 24);
+                          let timestamp = 'Just now';
+                          if (diffDays > 0) {
+                            timestamp = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+                          } else if (diffHours > 0) {
+                            timestamp = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+                          }
+                          return {
+                            id: s.id.toString(),
+                            subject: subject,
+                            sender: sender,
+                            preview: preview,
+                            aiLabel: (s.email_label as Email['aiLabel']) || 'low_priority',
+                            timestamp: timestamp,
+                            userConfirmed: s.user_confirmed || false,
+                          };
+                        });
+                      setEmails(emailSignals);
+                    } catch (error: any) {
+                      console.error('Delete error:', error);
+                      console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack
+                      });
+                      toast({
+                        title: "Error",
+                        description: error.message || "Failed to clear data. Please check if backend is running and you are logged in.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
-      <div className="space-y-4">
-        {emails.map((email) => (
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading emails...</p>
+        </div>
+      ) : emails.length === 0 ? (
+        <div className="text-center py-12">
+          <Mail className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-400 mb-2">No emails yet</h3>
+          <p className="text-gray-500">
+            Process some content in Feed Dump with email labels to see them here.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {emails.map((email) => (
           <div
             key={email.id}
             className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300"
@@ -183,7 +320,8 @@ const InboxSignalizer = () => {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

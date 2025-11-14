@@ -1,0 +1,29 @@
+📧 Email from investor@a16z.com
+Subject: Series A Follow-up
+Hi there! Following up on our conversation about your startup. We'd love to schedule a deeper dive into your business model. We're particularly interested in your traction metrics and go-to-market strategy. Can we schedule a call this week?
+
+📧 Email from newsletter@techcrunch.com
+Subject: Daily Tech News Digest
+This week in startup land: 10 new funding rounds, 3 major exits, and market trends analysis. Read more about the latest in AI, fintech, and SaaS.
+
+📧 Email from legal@bigcorp.com
+Subject: Contract Terms Discussion
+We've reviewed the proposed changes to the partnership agreement. We need your decision on the revenue share model by end of week. The contract is time-sensitive.
+
+🐦 Twitter: @startupfounder
+Just launched our MVP! 🚀 Excited to see what our users think. #startup #mvp
+
+📧 Email from events@growthco.com
+Subject: Webinar: Growth Hacking Tactics
+Join us for an exclusive webinar on scaling your startup with proven growth tactics. Learn from industry experts.
+
+📰 Article: "The Future of AI in Startups"
+Artificial intelligence is transforming how startups operate. From customer service to product development, AI tools are becoming essential.
+
+📧 Email from customer@example.com
+Subject: Feature Request
+Love the product! Would it be possible to add dark mode? Many users have requested this feature.
+
+💰 Funding Alert: StartupXYZ raised $50M Series B
+The company plans to expand into European markets and double their engineering team.
+

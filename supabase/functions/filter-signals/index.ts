@@ -85,7 +85,7 @@ Focus on startup-relevant signals: funding opportunities, customer feedback, com
 
     // Ensure each signal has an ID
     if (result.signals) {
-      result.signals = result.signals.map((signal: any) => ({
+      result.signals = result.signals.map((signal: { id?: string; [key: string]: unknown }) => ({
         ...signal,
         id: signal.id || crypto.randomUUID()
       }));

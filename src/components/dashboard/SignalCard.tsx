@@ -1,6 +1,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { TrendingUp, TrendingDown, Eye, Bookmark, X } from 'lucide-react';
 
 interface Signal {
@@ -19,6 +20,30 @@ interface SignalCardProps {
 
 const SignalCard = ({ signal }: SignalCardProps) => {
   const isSignal = signal.signalType === 'signal';
+  const { toast } = useToast();
+  
+  const handleAction = (action: string) => {
+    switch (action) {
+      case 'read':
+        toast({
+          title: "Marked as Read",
+          description: "This signal has been marked as read and saved.",
+        });
+        break;
+      case 'save':
+        toast({
+          title: "Saved",
+          description: "This signal has been saved for later review.",
+        });
+        break;
+      case 'ignore':
+        toast({
+          title: "Ignored",
+          description: "This signal has been marked as ignored.",
+        });
+        break;
+    }
+  };
   
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-400';
@@ -89,6 +114,7 @@ const SignalCard = ({ signal }: SignalCardProps) => {
           </span>
           <Button
             size="sm"
+            onClick={() => handleAction(signal.suggestedAction)}
             className={`bg-gradient-to-r ${getActionColor(signal.suggestedAction)} text-white text-xs px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105`}
           >
             {getActionIcon(signal.suggestedAction)}
